@@ -9,13 +9,6 @@
 simpleIAST是一种交互式应用程序安全测试工具。
 </p>
 
-## 项目结构
-```
-|_agent：负责agent的加载、卸载。
-|_engine：污点追踪的引擎代码
-   |__resource：资源文件
-      |___policy.json：hook策略文件
-```
 ## 支持中间件
 
 * Tomcat
@@ -32,6 +25,7 @@ simpleIAST是一种交互式应用程序安全测试工具。
 * URL跳转漏洞
 * XXE
 * 命令注入
+
 
 ## 快速开始
 
@@ -63,4 +57,12 @@ java -javaagent:iast-agent.jar -jar [app.jar] #
 java -jar iast-engine.jar -l # 获取应用的pid，需要确认tool.jar是否存在于${java.home}/lib目录中
 java -jar iast-engine.jar -p [PID] # attach方式运行
 
+```
+
+## 项目结构
+```
+|_agent：负责agent的加载、卸载。
+|_engine：污点追踪的引擎代码
+   |__resource：资源文件
+      |___policy.json：hook策略文件
 ```
