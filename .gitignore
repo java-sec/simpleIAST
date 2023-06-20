@@ -2,5 +2,7 @@ dependency-reduced-pom.xml
 /test/
 *.class
 *.lst
+*/target/*
 /target/
 /.idea/
+*.jar

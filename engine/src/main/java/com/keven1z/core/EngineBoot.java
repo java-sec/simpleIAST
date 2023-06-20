@@ -2,11 +2,10 @@ package com.keven1z.core;
 
 
 import com.keven1z.JarFileHelper;
-import com.sun.tools.attach.VirtualMachine;
-import com.sun.tools.attach.VirtualMachineDescriptor;
+import net.bytebuddy.agent.VirtualMachine;
 import org.apache.commons.cli.*;
+
 import java.lang.instrument.Instrumentation;
-import java.util.List;
 
 import static com.keven1z.Agent.*;
 
@@ -36,30 +35,27 @@ public class EngineBoot {
                                     final String agentJarPath,
                                     final String cfg) throws Exception {
 
-        VirtualMachine vmObj = null;
+        VirtualMachine machine = null;
         try {
-
-            vmObj = VirtualMachine.attach(targetJvmPid);
-            if (vmObj != null) {
-                vmObj.loadAgent(agentJarPath, cfg);
-            }
-
+            machine = VirtualMachine.ForHotSpot.attach(targetJvmPid);
+            machine.loadAgent(agentJarPath);
         } finally {
-            if (null != vmObj) {
-                vmObj.detach();
+            if (null != machine) {
+                machine.detach();
             }
+
         }
-        System.out.println("Attach successfully jvm pid:" + targetJvmPid + ",agentJarPath:" + agentJarPath);
+        System.out.println("Attach successfully.\n\tjvm pid:" + targetJvmPid + "\n\tagentJarPath:" + agentJarPath);
 
     }
 
-    private static void printVirtualMachine() {
-        List<VirtualMachineDescriptor> vmList = VirtualMachine.list();
-        System.out.println("Process Name\tPID");
-        for (VirtualMachineDescriptor vmd : vmList) {
-            System.out.println(vmd.displayName() + "\t" + vmd.id());
-        }
-    }
+//    private static void printVirtualMachine() {
+//        List<VirtualMachineDescriptor> vmList = com.sun.tools.attach.VirtualMachine.list();
+//        System.out.println("Process Name\tPID");
+//        for (VirtualMachineDescriptor vmd : vmList) {
+//            System.out.println(vmd.displayName() + "\t" + vmd.id());
+//        }
+//    }
 
     public static void main(String[] args) {
         try {
@@ -67,7 +63,7 @@ public class EngineBoot {
             options.addOption("h", "help", false, "print options information");
             options.addOption("v", "version", false, "print the version of iast");
             options.addOption("p", "pid", true, "attach jvm pid");
-            options.addOption("l", "list", false, "list all jvm pid");
+//            options.addOption("l", "list", false, "list all jvm pid");
 
             HelpFormatter helpFormatter = new HelpFormatter();
             CommandLineParser parser = new DefaultParser();
@@ -80,14 +76,18 @@ public class EngineBoot {
             } else if (cmd.hasOption("h")) {
                 helpFormatter.printHelp("java -jar iast-engine.jar", options, true);
             } else if (cmd.hasOption("p")) {
-                attachAgent(cmd.getOptionValue("p"), JarFileHelper.getAgentPath(), "");
-            } else if (cmd.hasOption("l")) {
-                printVirtualMachine();
-            } else {
+                String agentPath = JarFileHelper.getAgentPath();
+                if (System.getProperty("os.name").startsWith("Windows")){
+                    agentPath = agentPath.substring(1);
+                    agentPath = agentPath.replace("/","\\");
+                }
+                attachAgent(cmd.getOptionValue("p"), agentPath, "");
+            }  else {
                 helpFormatter.printHelp("java -jar iast-engine.jar", options, true);
             }
         } catch (Throwable e) {
-            System.err.println("Failed to Attach,reason:" + e.getMessage()+",Java.home:"+System.getProperty("java.home"));
+            System.err.println("Failed to Attach,reason:" + e.getMessage());
+            e.printStackTrace();
         }
     }
 

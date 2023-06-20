@@ -4,7 +4,9 @@ import com.keven1z.core.graph.taint.TaintData;
 import com.keven1z.core.graph.taint.TaintNode;
 import com.keven1z.core.policy.PolicyTypeEnum;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 public class TaintUtils {
     /**
@@ -52,10 +54,16 @@ public class TaintUtils {
         //如果为单个源
         if (sourceList.size() == 1) {
             TaintData taintData = sourceList.get(0);
-            returnSourceList.add(handlerSource(taintData, taintDataLinkedList));
+            String source = handlerSource(taintData, taintDataLinkedList);
+            if (source != null) {
+                returnSourceList.add(source);
+            }
         } else {
             for (TaintData taintData : sourceList) {
-                returnSourceList.add(handlerSource(taintData, taintDataLinkedList));
+                String source = handlerSource(taintData, taintDataLinkedList);
+                if (source != null) {
+                    returnSourceList.add(source);
+                }
             }
         }
         return returnSourceList;
@@ -83,19 +91,30 @@ public class TaintUtils {
                 return taintData.getToValue();
             case "java.io.InputStream":
                 return null;
-            case "java.util.Map":
+            case "java.util.ArrayList":
                 for (TaintData data : taintDataLinkedList) {
                     if (PolicyTypeEnum.PROPAGATION.equals(data.getType())) {
                         if (data.getFromObjectHashCode() == taintData.getToObjectHashCode()) {
-                            String className = taintData.getClassName();
-                            String method = taintData.getMethod();
-                            if (className.contains("Map") || method.equals("get")) {
-                                return data.getReturnValue();
+                            String className = data.getClassName();
+                            String method = data.getMethod();
+                            if (className.contains("List") && method.equals("get")) {
+                                return data.getToValue();
                             }
                         }
                     }
                 }
-                return null;
+            case "java.util.Map":
+                for (TaintData data : taintDataLinkedList) {
+                    if (PolicyTypeEnum.PROPAGATION.equals(data.getType())) {
+                        if (data.getFromObjectHashCode() == taintData.getToObjectHashCode()) {
+                            String className = data.getClassName();
+                            String method = data.getMethod();
+                            if (className.contains("Map") && method.equals("get")) {
+                                return data.getToValue();
+                            }
+                        }
+                    }
+                }
             default:
                 return null;
         }

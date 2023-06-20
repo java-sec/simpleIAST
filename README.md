@@ -38,7 +38,6 @@ wget https://github.com/keven1z/simpleIAST/archive/refs/heads/master.zip
 ```
 
 ```shell
-# 打包jar包,pom.xml存在导入tool.jar，若打包时提示不存在，手动配置tool.jar路径
 mvn clean package
 ```
 - **运行**
@@ -46,20 +45,16 @@ mvn clean package
 
 1. 跟随应用启动运行
 ```shell
-
 java -javaagent:iast-agent.jar -jar [app.jar] # 
-
 ```
 
 2. 应用启动后attach方式运行
 ```shell
-
-java -jar iast-engine.jar -l # 获取应用的pid，需要确认tool.jar是否存在于${java.home}/lib目录中
 java -jar iast-engine.jar -p [PID] # attach方式运行
 
 ```
 
-## 漏洞展示报文
+## 漏洞上报报文
 ```json
 {
     "http": {
