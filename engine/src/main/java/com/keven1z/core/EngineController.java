@@ -1,9 +1,9 @@
 package com.keven1z.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.hook.transforms.HookTransformer;
 import com.keven1z.core.hook.transforms.ServerDetectTransform;
-import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogConfig;
 import com.keven1z.core.log.LogTool;
@@ -14,16 +14,16 @@ import com.keven1z.core.monitor.MonitorManager;
 import com.keven1z.core.monitor.PerformanceMonitor;
 import com.keven1z.core.monitor.ReportMonitor;
 import com.keven1z.core.pojo.AgentDTO;
-import com.keven1z.core.policy.PolicyContainer;
 import com.keven1z.core.policy.ContextLoader;
+import com.keven1z.core.policy.PolicyContainer;
 import com.keven1z.core.utils.HttpClientUtils;
 import com.keven1z.core.utils.JsonUtils;
 import com.keven1z.core.utils.ReflectionUtils;
 import org.apache.log4j.Logger;
 
+import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Field;
 import java.lang.spy.SimpleIASTSpyManager;
-import java.lang.instrument.Instrumentation;
 
 
 /**
@@ -85,14 +85,11 @@ public class EngineController {
      * 关闭agent
      */
     public void shutdown() {
-        if (context.isOfflineEnabled()){
-            if (HttpClientUtils.deregister()) {
-                Logger.getLogger(getClass()).info("Agent deregister successfully,hostName:" + ApplicationModel.getHostName() + ",id:" + ApplicationModel.getAgentId());
-            } else {
-                Logger.getLogger(getClass()).warn("Agent deregister failed,hostName:" + ApplicationModel.getHostName() + ",id:" + ApplicationModel.getAgentId());
-            }
+        if (HttpClientUtils.deregister()) {
+            Logger.getLogger(getClass()).info("Agent deregister successfully,hostName:" + ApplicationModel.getHostName() + ",id:" + ApplicationModel.getAgentId());
+        } else {
+            Logger.getLogger(getClass()).warn("Agent deregister failed,hostName:" + ApplicationModel.getHostName() + ",id:" + ApplicationModel.getAgentId());
         }
-
         ApplicationModel.stop();
         System.out.println("[SimpleIAST] Stop Hook Successfully");
         EngineController.context.clear();
@@ -205,7 +202,7 @@ public class EngineController {
             throw new RuntimeException("Policy load failed");
         } else {
             if (LogTool.isDebugEnabled()) {
-                Logger.getLogger(getClass()).info("Policy load count:" + policyContainer.getAllPolicies().size());
+                Logger.getLogger(getClass()).info("Policy load count:" + policyContainer.getPolicySize());
             }
         }
         context.setPolicyContainer(policyContainer);

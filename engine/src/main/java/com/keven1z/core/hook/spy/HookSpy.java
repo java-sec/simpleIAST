@@ -1,17 +1,16 @@
 package com.keven1z.core.hook.spy;
 
-import java.lang.spy.SimpleIASTSpy;
-
 import com.keven1z.core.EngineController;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogTool;
 import com.keven1z.core.model.ApplicationModel;
-import com.keven1z.core.policy.PolicyTypeEnum;
 import com.keven1z.core.policy.PolicyContainer;
+import com.keven1z.core.policy.PolicyTypeEnum;
 import org.apache.log4j.Logger;
 
-import static com.keven1z.core.Config.MAX_REPORT_QUEUE_SIZE;
+import java.lang.spy.SimpleIASTSpy;
 
+import static com.keven1z.core.Config.MAX_REPORT_QUEUE_SIZE;
 import static com.keven1z.core.hook.spy.HookThreadLocal.*;
 
 public class HookSpy implements SimpleIASTSpy {
@@ -19,7 +18,6 @@ public class HookSpy implements SimpleIASTSpy {
     private static final Logger logger = Logger.getLogger(HookSpy.class);
 
     public static PolicyContainer policyContainer;
-
     private final HookSpyHandler spyHandler = HookSpyHandler.getInstance();
 
     @Override
@@ -36,6 +34,12 @@ public class HookSpy implements SimpleIASTSpy {
             if (!ApplicationModel.isRunning()) {
                 return;
             }
+
+            //如果没有流量，不进行hook
+            if (REQUEST_THREAD_LOCAL.get() == null && !PolicyTypeEnum.HTTP.toString().equals(type)) {
+                return;
+            }
+
             /*
              * 如果上报线程满了，不进行hook
              */
@@ -43,6 +47,7 @@ public class HookSpy implements SimpleIASTSpy {
                 clear();
                 return;
             }
+
             /*
              * 如果存在漏洞，且不为流量hook点，不再进行hook解析处理
              */
@@ -55,10 +60,7 @@ public class HookSpy implements SimpleIASTSpy {
                 clear();
                 return;
             }
-            //如果没有流量，不进行hook
-            if (REQUEST_THREAD_LOCAL.get() == null && !PolicyTypeEnum.HTTP.toString().equals(type)) {
-                return;
-            }
+
 
             if (policyContainer == null) {
                 policyContainer = EngineController.context.getPolicyContainer();

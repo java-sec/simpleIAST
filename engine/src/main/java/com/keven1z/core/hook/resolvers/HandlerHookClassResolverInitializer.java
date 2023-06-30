@@ -1,15 +1,15 @@
 package com.keven1z.core.hook.resolvers;
 
-import com.keven1z.core.hook.spy.HookSpy;
+import com.keven1z.core.graph.taint.TaintGraph;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogTool;
-import com.keven1z.core.policy.Policy;
-import com.keven1z.core.policy.PolicyContainer;
 import com.keven1z.core.policy.PolicyTypeEnum;
-import com.keven1z.core.utils.PolicyUtils;
+
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.keven1z.core.hook.spy.HookThreadLocal.TAINT_GRAPH_THREAD_LOCAL;
 
 /**
  * @author keven1z
@@ -48,10 +48,23 @@ public class HandlerHookClassResolverInitializer {
     }
 
     public void resolve(Object returnValue, Object thisObject, Object[] parameters, String className, String method, String desc, String type, String policyName, boolean isEnter) {
-        PolicyContainer policyContainer = HookSpy.policyContainer;
+        TaintGraph taintGraph = TAINT_GRAPH_THREAD_LOCAL.get();
+        /*
+         * 如果污点图为空，并且不为http或污染源节点，则不处理
+         */
+        if (taintGraph != null) {
+            if (taintGraph.isEmpty() && !(PolicyTypeEnum.HTTP.name().equals(type) || PolicyTypeEnum.SOURCE.name().equals(type))) {
+                return;
+            }
+        }
+
+        /*
+         * 由于存在大量的jar包初始化的调用，需要进行hook点过滤
+         */
         if (isHookFiltered(thisObject, returnValue)) {
             return;
         }
+
         HandlerHookClassResolver resolver = resolverMap.get(PolicyTypeEnum.valueOf(type));
         if (resolver == null) {
             if (LogTool.isDebugEnabled()) {
@@ -60,16 +73,8 @@ public class HandlerHookClassResolverInitializer {
             return;
         }
 
-        Policy policy = PolicyUtils.getHookedPolicy(className, method, desc, policyContainer);
-        if (policy == null) {
-            if (LogTool.isDebugEnabled()) {
-                LogTool.warn(ErrorType.POLICY_ERROR, "Can't match the policy,className:" + className + ",method:" + method + ",desc:" + desc);
-            }
-            return;
-        }
         try {
-            resolver.resolve(returnValue, thisObject, parameters, className, method, desc, policyName, policy, isEnter);
-
+            resolver.resolve(returnValue, thisObject, parameters, className, method, desc, policyName, isEnter);
         } catch (Exception e) {
             if (LogTool.isDebugEnabled()) {
                 LogTool.warn(ErrorType.RESOLVE_ERROR, "Resolver error", e);

@@ -10,6 +10,14 @@ import java.util.Set;
  * @date 2023/02/22
  */
 public class Policy implements Serializable {
+    public Policy(String className, String method, String desc) {
+        this.className = className;
+        this.method = method;
+        this.desc = desc;
+    }
+    public Policy(){
+
+    }
     /**
      * 策略名称
      */

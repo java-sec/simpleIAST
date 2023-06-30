@@ -16,6 +16,7 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public class ClassUtils {
     private static final String[] IGNORE_OBJECT_CLASS = new String[]{"java.lang.Object", "java.lang.Cloneable", "java.io.Serializable", "java.lang.Iterable"};
+    private static final String INTEGER_CLASS = "java.lang.Integer";
 
     /**
      * 获取当前类的所有祖先类
@@ -167,6 +168,14 @@ public class ClassUtils {
 
     public static boolean isInterface(int access) {
         return BitUtils.isIn(access, ACC_INTERFACE);
+    }
+
+    /**
+     * @param clazz 待判断的class
+     * @return 判断class对应的对象是否为数字类型
+     */
+    public static boolean classIsInteger(Class<?> clazz) {
+        return clazz.getName().equals(INTEGER_CLASS);
     }
 
 }

@@ -7,7 +7,6 @@ import com.keven1z.core.log.LogTool;
 import com.keven1z.core.utils.FileUtils;
 import com.keven1z.core.utils.JsonUtils;
 import com.keven1z.core.utils.ReflectionUtils;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,30 +38,47 @@ public class ContextLoader {
             if (policyContainer == null) {
                 return null;
             }
+
             List<Policy> sources = policyContainer.getSource();
+            List<Policy> interfacePolicy = policyContainer.getInterfacePolicy();
             for (Policy source : sources) {
+                if (source.getInter()) {
+                    interfacePolicy.add(source);
+                }
                 source.setType(PolicyTypeEnum.SOURCE);
             }
             List<Policy> propagations = policyContainer.getPropagation();
             for (Policy propagation : propagations) {
+                if (propagation.getInter()) {
+                    interfacePolicy.add(propagation);
+                }
                 propagation.setType(PolicyTypeEnum.PROPAGATION);
             }
             List<Policy> sinks = policyContainer.getSink();
             for (Policy sink : sinks) {
+                if (sink.getInter()) {
+                    interfacePolicy.add(sink);
+                }
                 sink.setType(PolicyTypeEnum.SINK);
             }
             List<Policy> https = policyContainer.getHttp();
             for (Policy http : https) {
+                if (http.getInter()) {
+                    interfacePolicy.add(http);
+                }
                 http.setType(PolicyTypeEnum.HTTP);
             }
             List<Policy> sanitizers = policyContainer.getSanitizers();
             for (Policy sanitizer : sanitizers) {
+                if (sanitizer.getInter()) {
+                    interfacePolicy.add(sanitizer);
+                }
                 sanitizer.setType(PolicyTypeEnum.SANITIZER);
             }
 
-            if (LogTool.isDebugEnabled()) {
-                Logger.getLogger(ContextLoader.class.getPackage().getName()).info(JsonUtils.toString(policyContainer.getAllPolicies()));
-            }
+//            if (LogTool.isDebugEnabled()) {
+//                Logger.getLogger(ContextLoader.class.getPackage().getName()).info(JsonUtils.toString(policyContainer.getAllPolicies()));
+//            }
             return policyContainer;
         } finally {
             if (inputStream != null) {

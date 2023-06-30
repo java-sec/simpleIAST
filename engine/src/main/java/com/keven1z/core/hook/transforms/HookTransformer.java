@@ -1,12 +1,12 @@
 package com.keven1z.core.hook.transforms;
 
+import com.keven1z.core.hook.asm.HookClassVisitor;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogTool;
 import com.keven1z.core.policy.PolicyContainer;
 import com.keven1z.core.utils.AsmUtils;
 import com.keven1z.core.utils.ClassUtils;
 import com.keven1z.core.utils.PolicyUtils;
-import com.keven1z.core.hook.asm.HookClassVisitor;
 import org.apache.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -44,7 +44,7 @@ public class HookTransformer implements ClassFileTransformer {
         //如果transformer数量大于阈值，不进行transform，发出警告
         if (transformCount > MAX_TRANSFORM_COUNT) {
             if (LogTool.isDebugEnabled()) {
-                LogTool.warn(ErrorType.TRANSFORM_ERROR, "TransformCount exceeded the threshold.current transformCount is " + transformCount);
+                LogTool.warn(ErrorType.TRANSFORM_ERROR, "TransformCount exceeded the threshold.current transformCount is " + transformCount + ",class:" + className);
             }
             return classfileBuffer;
         }

@@ -2,16 +2,13 @@ package com.keven1z.core.hook.spy;
 
 import com.keven1z.core.graph.taint.TaintGraph;
 import com.keven1z.core.graph.taint.TaintNode;
-import com.keven1z.core.hook.resolvers.HandlerHookClassResolverInitializer;
 import com.keven1z.core.hook.http.request.AbstractRequest;
+import com.keven1z.core.hook.resolvers.HandlerHookClassResolverInitializer;
 import com.keven1z.core.log.LogTool;
 import com.keven1z.core.model.ApplicationModel;
 import com.keven1z.core.vulnerability.report.ReportMessage;
 import org.apache.log4j.Logger;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 
 import static com.keven1z.core.hook.spy.HookSpy.clear;
@@ -32,7 +29,6 @@ public class HookSpyHandler {
 
     public void doHandle(Object returnObject, Object thisObject, Object[] parameters, String className, String method, String desc, String type, String policyName, boolean isEnter) {
         classResolverInitializer.resolve(returnObject, thisObject, parameters, className, method, desc, type, policyName, isEnter);
-
         if (!isRequestEnd.get()) {
             return;
         }
@@ -57,7 +53,7 @@ public class HookSpyHandler {
             AbstractRequest request = REQUEST_THREAD_LOCAL.get();
             String agentId = ApplicationModel.getAgentId();
             ReportMessage reportMessage = new ReportMessage(agentId, request.getRequestURL().toString(), request.getMethod(), taintGraph);
-            reportMessage.setHttpMessage(Base64.getEncoder().encode(request.getRequestDetail()));
+//            reportMessage.setHttpMessage(Base64.getEncoder().encode(request.getRequestDetail()));
 //            reportMessage.setHeaders(request.getHeaders());
             boolean isOffer = REPORT_QUEUE.offer(reportMessage);
             if (!isOffer) {

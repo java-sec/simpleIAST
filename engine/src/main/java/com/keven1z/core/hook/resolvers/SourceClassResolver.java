@@ -2,9 +2,11 @@ package com.keven1z.core.hook.resolvers;
 
 import com.keven1z.core.EngineController;
 import com.keven1z.core.consts.PolicyConst;
-import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.graph.taint.TaintData;
 import com.keven1z.core.graph.taint.TaintGraph;
+import com.keven1z.core.hook.spy.HookSpy;
+import com.keven1z.core.log.ErrorType;
+import com.keven1z.core.log.LogTool;
 import com.keven1z.core.policy.Policy;
 import com.keven1z.core.policy.PolicyTypeEnum;
 import com.keven1z.core.utils.ClassUtils;
@@ -16,9 +18,7 @@ import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-
 
 import static com.keven1z.core.consts.CommonConst.OFF;
 import static com.keven1z.core.consts.CommonConst.ON;
@@ -35,8 +35,16 @@ public class SourceClassResolver implements HandlerHookClassResolver {
     private static final String[] USER_PACKAGE_PREFIX = new String[]{"java", "javax", " org.spring".substring(1), " org.apache".substring(1), " io.undertow".substring(1)};
 
     @Override
-    public void resolve(Object returnObject, Object thisObject, Object[] parameters, String className, String method, String desc, String policyName, Policy policy, boolean isEnter) {
+    public void resolve(Object returnObject, Object thisObject, Object[] parameters, String className, String method, String desc, String policyName, boolean isEnter) {
         if (returnObject == null || returnObject.equals("")) {
+            return;
+        }
+
+        Policy policy = PolicyUtils.getHookedPolicy(className, method, desc, HookSpy.policyContainer.getSource());
+        if (policy == null) {
+            if (LogTool.isDebugEnabled()) {
+                LogTool.warn(ErrorType.POLICY_ERROR, "Can't match the policy,className:" + className + ",method:" + method + ",desc:" + desc);
+            }
             return;
         }
 
@@ -71,7 +79,7 @@ public class SourceClassResolver implements HandlerHookClassResolver {
     /**
      * 将污染对象的所有get方法作为污染源
      *
-     * @param taintObject 污染对象
+     * @param taintClass 污染对象
      */
     private void addBeanObjectPolicy(Class<?> taintClass) {
         List<Method> toBeTransformedMethods = getMethodToBeTransformed(taintClass);
@@ -79,24 +87,15 @@ public class SourceClassResolver implements HandlerHookClassResolver {
             return;
         }
 
-        HashSet<String> transformClassNames = new HashSet<>();
+        Instrumentation inst = EngineController.context.getInstrumentation();
+        if (inst == null) {
+            return;
+        }
+        Class<?>[] loadedClasses = inst.getAllLoadedClasses();
         for (Method method : toBeTransformedMethods) {
             String name = method.getName();
             String taintClassName = method.getDeclaringClass().getName();
-
-            if (StringUtils.isStartsWithElementInArray(taintClassName, USER_PACKAGE_PREFIX)) {
-                continue;
-            }
-            transformClassNames.add(taintClassName);
-
-            Policy policy = new Policy();
-            policy.setClassName(taintClassName.replace(".", "/"));
-            policy.setMethod(name);
-            policy.setDesc(ClassUtils.classToSmali(method.getReturnType()));
-            assert HookSpy.policyContainer != null;
-            if (HookSpy.policyContainer.getAllPolicies().contains(policy)) {
-                continue;
-            }
+            Policy policy = new Policy(taintClassName.replace(".", "/"), name, ClassUtils.classToSmali(method.getReturnType()));
             policy.setFrom(PolicyConst.O);
             policy.setTo(PolicyConst.R);
             policy.setState(ON);
@@ -104,8 +103,8 @@ public class SourceClassResolver implements HandlerHookClassResolver {
             policy.setExit(ON);
             policy.setType(PolicyTypeEnum.SOURCE);
             HookSpy.policyContainer.addPolicy(policy);
+            reTransform(taintClassName, inst, loadedClasses);
         }
-        reTransform(transformClassNames);
 
     }
 
@@ -117,27 +116,33 @@ public class SourceClassResolver implements HandlerHookClassResolver {
             if (!Modifier.isPublic(modifiers) || Modifier.isNative(modifiers)) {
                 continue;
             }
+
+            String taintClassName = method.getDeclaringClass().getName();
             String name = method.getName();
             if (name.startsWith("get")) {
-                toBeTransformedMethods.add(method);
+                if (ClassUtils.classIsInteger(method.getReturnType())){
+                    continue;
+                }
+
+                if (StringUtils.isStartsWithElementInArray(taintClassName, USER_PACKAGE_PREFIX)) {
+                    continue;
+                }
+
+                if (!PolicyUtils.isExistInPolicy(taintClassName.replace(".", "/"), HookSpy.policyContainer.getSource())) {
+                    toBeTransformedMethods.add(method);
+                }
             }
         }
         return toBeTransformedMethods;
     }
 
-    private void reTransform(HashSet<String> transformClasses) {
-
-        Instrumentation inst = EngineController.context.getInstrumentation();
-        if (inst == null) {
-            return;
-        }
-        Class<?>[] loadedClasses = inst.getAllLoadedClasses();
+    private void reTransform(String transformClassName, Instrumentation inst, Class<?>[] loadedClasses) {
         for (Class<?> clazz : loadedClasses) {
-            if (transformClasses.contains(clazz.getName())) {
+            if (transformClassName.equals(clazz.getName())) {
                 try {
                     inst.retransformClasses(clazz);
                 } catch (UnmodifiableClassException e) {
-                    throw new RuntimeException(e);
+                    LogTool.error(ErrorType.TRANSFORM_ERROR, "In the source stage,transform " + transformClassName + " error");
                 }
             }
         }

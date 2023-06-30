@@ -3,8 +3,11 @@ package com.keven1z.core.hook.resolvers;
 import com.keven1z.core.graph.taint.TaintData;
 import com.keven1z.core.graph.taint.TaintGraph;
 import com.keven1z.core.graph.taint.TaintNode;
-import com.keven1z.core.policy.PolicyTypeEnum;
+import com.keven1z.core.hook.spy.HookSpy;
+import com.keven1z.core.log.ErrorType;
+import com.keven1z.core.log.LogTool;
 import com.keven1z.core.policy.Policy;
+import com.keven1z.core.policy.PolicyTypeEnum;
 import com.keven1z.core.utils.PolicyUtils;
 
 import java.util.List;
@@ -19,10 +22,12 @@ import static com.keven1z.core.hook.spy.HookThreadLocal.TAINT_GRAPH_THREAD_LOCAL
  */
 public class PropagationClassResolver implements HandlerHookClassResolver {
     @Override
-    public void resolve(Object returnObject, Object thisObject, Object[] parameters, String className, String method, String desc, String policyName, Policy policy, boolean isEnter) {
-        //如果污点图为空，则不进去传播过程的构建，仅有污染源时，才进行图的构建
-        TaintGraph taintGraph = TAINT_GRAPH_THREAD_LOCAL.get();
-        if (taintGraph.isEmpty()) {
+    public void resolve(Object returnObject, Object thisObject, Object[] parameters, String className, String method, String desc, String policyName, boolean isEnter) {
+        Policy policy = PolicyUtils.getHookedPolicy(className, method, desc, HookSpy.policyContainer.getPropagation());
+        if (policy == null) {
+            if (LogTool.isDebugEnabled()) {
+                LogTool.warn(ErrorType.POLICY_ERROR, "Can't match the policy,className:" + className + ",method:" + method + ",desc:" + desc);
+            }
             return;
         }
 
@@ -31,6 +36,8 @@ public class PropagationClassResolver implements HandlerHookClassResolver {
         if (fromList.isEmpty()) {
             return;
         }
+
+        TaintGraph taintGraph = TAINT_GRAPH_THREAD_LOCAL.get();
         for (Object fromObject : fromList) {
             TaintNode taintNode = PolicyUtils.searchFromNode(fromObject, taintGraph);
             if (taintNode == null) {

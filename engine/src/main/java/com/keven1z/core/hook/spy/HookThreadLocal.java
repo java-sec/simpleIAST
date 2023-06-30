@@ -50,7 +50,7 @@ public class HookThreadLocal {
     /**
      * 当前线程的污点传播图数据
      */
-    public static final ThreadLocal<TaintGraph> TAINT_GRAPH_THREAD_LOCAL = new ThreadLocal<TaintGraph>();
+    public static final ThreadLocal<TaintGraph> TAINT_GRAPH_THREAD_LOCAL = new ThreadLocal<>();
 
     /**
      * 当前线程请求流量
@@ -62,5 +62,9 @@ public class HookThreadLocal {
     public static final AtomicInteger INVOKE_ID = new AtomicInteger(INVOKE_ID_INIT_VALUE);
 
     public static final LinkedBlockingQueue<ReportMessage> REPORT_QUEUE = new LinkedBlockingQueue<>(MAX_REPORT_QUEUE_SIZE);
+    /**
+     * 请求消耗的时间计算
+     */
+    public static final ThreadLocal<Long> REQUEST_TIME_CONSUMED = new ThreadLocal<>();
 
 }
