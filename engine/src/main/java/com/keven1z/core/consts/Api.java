@@ -4,7 +4,14 @@ import com.keven1z.core.Config;
 
 public class Api {
     private Api(){}
+
+    /**
+     * 服务注册
+     */
     public static final String AGENT_REGISTER_URL = Config.IAST_SERVER + "/agent/register";
+    /**
+     * 服务器解绑
+     */
     public static final String AGENT_DEREGISTER_URL = Config.IAST_SERVER + "/agent/deregister";
 
     /**

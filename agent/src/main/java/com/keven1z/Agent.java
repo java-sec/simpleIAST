@@ -20,6 +20,12 @@ public class Agent {
     public static String projectVersion;
     public static String buildTime;
     public static String gitCommit;
+    /*
+     * 启动模式.
+     *  START_MODE_OFFLINE:离线模式.
+     *  START_MODE_SERVER:服务器模式.
+     *
+     */
     public static final String START_MODE = START_MODE_OFFLINE;
 
     public static void premain(String args, Instrumentation inst) {

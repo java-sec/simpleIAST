@@ -5,7 +5,7 @@ package com.keven1z;
 import java.lang.instrument.Instrumentation;
 
 public interface Module {
-     String START_MODE_NORMAL = "normal";
+     String START_MODE_SERVER = "normal";
      String START_MODE_OFFLINE = "offline";
 
      String START_ACTION_INSTALL = "install";
