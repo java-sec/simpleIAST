@@ -1,9 +1,9 @@
 package com.keven1z.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.hook.transforms.HookTransformer;
 import com.keven1z.core.hook.transforms.ServerDetectTransform;
+import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogConfig;
 import com.keven1z.core.log.LogTool;
@@ -11,19 +11,18 @@ import com.keven1z.core.model.ApplicationModel;
 import com.keven1z.core.model.IASTContext;
 import com.keven1z.core.monitor.InstructionMonitor;
 import com.keven1z.core.monitor.MonitorManager;
-import com.keven1z.core.monitor.PerformanceMonitor;
 import com.keven1z.core.monitor.ReportMonitor;
 import com.keven1z.core.pojo.AgentDTO;
-import com.keven1z.core.policy.ContextLoader;
 import com.keven1z.core.policy.PolicyContainer;
+import com.keven1z.core.policy.FileLoader;
+import com.keven1z.core.utils.ClassUtils;
 import com.keven1z.core.utils.HttpClientUtils;
 import com.keven1z.core.utils.JsonUtils;
-import com.keven1z.core.utils.ReflectionUtils;
 import org.apache.log4j.Logger;
 
-import java.lang.instrument.Instrumentation;
-import java.lang.reflect.Field;
 import java.lang.spy.SimpleIASTSpyManager;
+import java.lang.instrument.Instrumentation;
+import java.util.List;
 
 
 /**
@@ -35,12 +34,10 @@ import java.lang.spy.SimpleIASTSpyManager;
 public class EngineController {
     public static final IASTContext context = IASTContext.getContext();
 
-    public void start(String mode, Instrumentation inst) {
+    public void start(String mode, Instrumentation inst) throws JsonProcessingException, InterruptedException {
 
         banner();
         loadLog();
-        addShutdownHook();
-
         boolean isInit = init(inst, mode);
         /*
          * 如果初始化失败，退出agent
@@ -62,21 +59,27 @@ public class EngineController {
                     System.err.println("[SimpleIAST] Register failed,hostName:" + ApplicationModel.getHostName());
                     return;
                 } else {
-                    System.out.println("[SimpleIAST] Register successful,hostName:" + ApplicationModel.getHostName());
+                    System.out.println("[SimpleIAST] Register successful,server:" + Config.IAST_SERVER);
                 }
             } catch (Exception e) {
                 LogTool.error(ErrorType.REGISTER_ERROR, "Register failed,hostName:" + ApplicationModel.getHostName(), e);
                 System.err.println("Register failed,hostName:" + ApplicationModel.getHostName());
+                try {
+                    ClassUtils.closeSimpleIASTClassLoader();
+                } catch (Exception ignore) {
+                }
                 return;
             }
         }
-
+        addShutdownHook();
         loadPolicy();
+        loadBlackList();
+        System.out.println("[SimpleIAST] SimpleIAST init successfully,hostName:" + ApplicationModel.getHostName());
         loadTransform();
         ApplicationModel.start();
 
         //启动监控进程
-        MonitorManager.start(new ReportMonitor(), new PerformanceMonitor(), new InstructionMonitor());
+        MonitorManager.start(new ReportMonitor(), new InstructionMonitor());
 
         Logger.getLogger(getClass()).info("Agent run successfully,hostName:" + ApplicationModel.getHostName());
     }
@@ -98,11 +101,7 @@ public class EngineController {
         System.out.println("[SimpleIAST] Close HttpClient Successfully");
         MonitorManager.clear();
         try {
-            //关闭classLoader
-            Class<?> loadClass = ClassLoader.getSystemClassLoader().loadClass("com.keven1z.ModuleLoader");
-            Field field = loadClass.getField("classLoader");
-            Object classloader = field.get(loadClass);
-            ReflectionUtils.invokeMethod(classloader, "closeIfPossible", new Class[]{});
+            ClassUtils.closeSimpleIASTClassLoader();
         } catch (Exception e) {
             System.err.println("[SimpleIAST] Shutdown Failed,Reason:" + e.getMessage());
         }
@@ -195,8 +194,8 @@ public class EngineController {
     /**
      * 加载策略
      */
-    public void loadPolicy() {
-        PolicyContainer policyContainer = loadPolicy(this.getClass().getClassLoader());
+    public void loadPolicy() throws JsonProcessingException {
+        PolicyContainer policyContainer = FileLoader.load(this.getClass().getClassLoader());
         if (policyContainer == null) {
             LogTool.error(ErrorType.POLICY_ERROR, "policyContainer is null");
             throw new RuntimeException("Policy load failed");
@@ -208,25 +207,16 @@ public class EngineController {
         context.setPolicyContainer(policyContainer);
     }
 
-
-    /**
-     * 加载策略文件
-     *
-     * @return {@link PolicyContainer} 策略容器
-     */
-    public PolicyContainer loadPolicy(ClassLoader classLoader) {
-        try {
-            return ContextLoader.load(classLoader);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    public void loadBlackList() {
+        List<String> blackList = FileLoader.loadBlackList(this.getClass().getClassLoader());
+        context.setBlackList(blackList);
     }
 
     /**
      * 初始化类字节码的转换器
      */
     private void initTransformer() {
-        context.getInstrumentation().addTransformer(new ServerDetectTransform(), false);
+        context.getInstrumentation().addTransformer(new ServerDetectTransform(), true);
         HookTransformer hookTransformer = new HookTransformer(context.getPolicy(), context.getInstrumentation());
         hookTransformer.reTransform();
 

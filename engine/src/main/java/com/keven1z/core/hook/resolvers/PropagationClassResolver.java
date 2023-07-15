@@ -6,12 +6,10 @@ import com.keven1z.core.graph.taint.TaintNode;
 import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogTool;
-import com.keven1z.core.policy.Policy;
 import com.keven1z.core.policy.PolicyTypeEnum;
+import com.keven1z.core.policy.Policy;
 import com.keven1z.core.utils.PolicyUtils;
-
 import java.util.List;
-
 import static com.keven1z.core.hook.spy.HookThreadLocal.TAINT_GRAPH_THREAD_LOCAL;
 
 /**

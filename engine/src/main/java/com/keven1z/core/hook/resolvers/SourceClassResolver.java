@@ -2,9 +2,9 @@ package com.keven1z.core.hook.resolvers;
 
 import com.keven1z.core.EngineController;
 import com.keven1z.core.consts.PolicyConst;
+import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.graph.taint.TaintData;
 import com.keven1z.core.graph.taint.TaintGraph;
-import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogTool;
 import com.keven1z.core.policy.Policy;
@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+
 
 import static com.keven1z.core.consts.CommonConst.OFF;
 import static com.keven1z.core.consts.CommonConst.ON;

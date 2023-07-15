@@ -384,23 +384,7 @@ public abstract class AbstractRequest {
         }
     }
 
-    /**
-     * 添加 HTTP request body
-     *
-     * @param bytes  字节数组
-     * @param offset 要添加的起始偏移量
-     * @param len    要添加的长度
-     */
-    public void appendBody(byte[] bytes, int offset, int len) {
-        if (bodyOutputStream == null) {
-            bodyOutputStream = new ByteArrayOutputStream();
-        }
-
-        len = Math.min(len, maxBodySize - bodyOutputStream.size());
-        if (len > 0) {
-            bodyOutputStream.write(bytes, offset, len);
-        }
-    }
+   public abstract byte[] getRequestMessage();
 
     /**
      * 添加 HTTP request body

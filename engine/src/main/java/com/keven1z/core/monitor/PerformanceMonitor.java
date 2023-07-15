@@ -30,7 +30,7 @@ public class PerformanceMonitor extends Monitor {
             ApplicationModel.stop();
             stopRunning();
         }
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
     }
 

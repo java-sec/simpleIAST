@@ -312,6 +312,11 @@ public final class HttpServletRequest extends AbstractRequest {
         return realIp != null ? realIp : "";
     }
 
+    @Override
+    public byte[] getRequestMessage() {
+        return new byte[0];
+    }
+
     private Map<String, String[]> getMergeMap(Map<String, String[]> map1, Map<String, String[]> map2) {
         if (map1 == null && map2 == null) {
             return null;

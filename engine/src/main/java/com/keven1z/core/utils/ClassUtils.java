@@ -6,6 +6,7 @@ import org.objectweb.asm.ClassReader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.*;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -177,5 +178,11 @@ public class ClassUtils {
     public static boolean classIsInteger(Class<?> clazz) {
         return clazz.getName().equals(INTEGER_CLASS);
     }
-
+    public static void closeSimpleIASTClassLoader() throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+        //关闭classLoader
+        Class<?> loadClass = ClassLoader.getSystemClassLoader().loadClass("com.keven1z.ModuleLoader");
+        Field field = loadClass.getField("classLoader");
+        Object classloader = field.get(loadClass);
+        ReflectionUtils.invokeMethod(classloader, "closeIfPossible", new Class[]{});
+    }
 }

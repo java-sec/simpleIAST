@@ -3,6 +3,7 @@ package com.keven1z.core.graph.taint;
 import com.keven1z.core.log.LogTool;
 import com.keven1z.core.policy.PolicyTypeEnum;
 import org.apache.log4j.Logger;
+
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -21,6 +22,11 @@ public class TaintGraph {
      */
     private final Set<TaintNode> nodeSet;
     private final List<TaintNode> sinkNode;
+
+    /**
+     * 污点缓存
+     */
+    private final Set<Integer> taintCache;
     private final Logger taintLogger = Logger.getLogger("taint.info");
 
 
@@ -28,37 +34,23 @@ public class TaintGraph {
      * 初始化有向图
      */
     public TaintGraph() {
-        this.nodeSet = new CopyOnWriteArraySet<>(new HashSet<>(2048));
-        this.sinkNode = new CopyOnWriteArrayList<>(new ArrayList<>(10));
-
+//        this.nodeSet = new CopyOnWriteArraySet<>(new HashSet<>(2048));
+        this.nodeSet = new HashSet<>(2048);
+        this.sinkNode = new ArrayList<>(10);
+        this.taintCache = new HashSet<>(1024);
     }
 
     public void addNode(TaintData taintData) {
-        TaintNode node = getNode(taintData);
-        if (node != null) {
-            node.getTaintData().setMethod(taintData.getMethod());
-            node.getTaintData().setDesc(taintData.getDesc());
-        } else {
-            node = new TaintNode(taintData);
-            addNode(node);
-        }
-
+        TaintNode node = new TaintNode(taintData);
+        addNode(node);
+        this.taintCache.add(taintData.getToObjectHashCode());
         if (LogTool.isDebugEnabled()) {
             taintLogger.info("Add taint:" + taintData);
         }
     }
 
-    public TaintData addNode(String className, String method, String desc) {
-        TaintNode node = this.getNode(className);
-        if (node != null) {
-            return node.getTaintData();
-        }
-        TaintData taintData = new TaintData(className, method, desc);
-        taintData.setClassName(className);
-        node = new TaintNode(taintData);
-        // 直接加入到集合中
-        addNode(node);
-        return taintData;
+    public boolean isTaint(int systemCode) {
+        return taintCache.contains(systemCode);
     }
 
     public void addNode(TaintNode node) {
@@ -127,21 +119,6 @@ public class TaintGraph {
         return null;
     }
 
-    /**
-     * 获取对应的图节点
-     *
-     * @param vertex 顶点
-     * @return 图节点
-     * @since 0.0.2
-     */
-    public TaintNode getNode(TaintData vertex) {
-        for (TaintNode node : nodeSet) {
-            if (node.getTaintData().equals(vertex)) {
-                return node;
-            }
-        }
-        return null;
-    }
 
     /**
      * 获取className当前class节点
@@ -226,6 +203,7 @@ public class TaintGraph {
         this.clearEdges();
         this.sinkNode.clear();
         this.nodeSet.clear();
+        this.taintCache.clear();
     }
 
     public void addEdge(TaintData from, TaintData to) {

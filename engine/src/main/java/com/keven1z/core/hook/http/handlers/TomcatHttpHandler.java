@@ -94,17 +94,20 @@ public class TomcatHttpHandler implements HttpRequestHandler {
         if (requestURI != null) {
             String[] strings = requestURI.split("/");
             String generalizationUri = requestURI;
-            String lastUri = strings[strings.length - 1];
-            if (lastUri.matches("-?\\d+(\\.\\d+)?")) {
-                generalizationUri = generalizationUri.replace(lastUri, "{}");
+            if (strings.length != 0){
+                String lastUri = strings[strings.length - 1];
+                if (lastUri.matches("-?\\d+(\\.\\d+)?")) {
+                    generalizationUri = generalizationUri.replace(lastUri, "{}");
+                }
+
+                if (REQUEST_CACHE.contains(generalizationUri)) {
+                    return;
+                }
+                if (REQUEST_CACHE.size() <= MAX_REQUEST_CACHE_SIZE) {
+                    REQUEST_CACHE.add(generalizationUri);
+                }
             }
 
-            if (REQUEST_CACHE.contains(generalizationUri)) {
-                return;
-            }
-            if (REQUEST_CACHE.size() <= MAX_REQUEST_CACHE_SIZE) {
-                REQUEST_CACHE.add(generalizationUri);
-            }
         }
 
 

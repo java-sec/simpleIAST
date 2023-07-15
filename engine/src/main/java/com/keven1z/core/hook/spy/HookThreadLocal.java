@@ -12,6 +12,7 @@ import static com.keven1z.core.Config.MAX_REPORT_QUEUE_SIZE;
 public class HookThreadLocal {
     /**
      * hook锁，防止在hook过程中调用方法递归hook，导致栈溢出
+     * 注意：当在初始化hook时，若在doSpy方法中存在class初始化，则该class并不会被{@link com.keven1z.core.hook.transforms.HookTransformer}中transform方法捕获，导致hook点的丢失
      */
     public static final ThreadLocal<Boolean> enableHookLock = new ThreadLocal<Boolean>() {
         @Override

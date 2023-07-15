@@ -108,9 +108,19 @@
       "exit": 1
     },
     {
-      "className": "java/lang/StringBuilder",
+      "className": "java/lang/AbstractStringBuilder",
       "method": "append",
-      "desc": "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+      "desc": "(Ljava/lang/String;)Ljava/lang/AbstractStringBuilder;",
+      "state": 1,
+      "from": "P1",
+      "to": "R",
+      "enter": 0,
+      "exit": 1
+    },
+    {
+      "className": "java/lang/AbstractStringBuilder",
+      "method": "append",
+      "desc": "(Ljava/lang/AbstractStringBuilder;)Ljava/lang/AbstractStringBuilder;",
       "state": 1,
       "from": "P1",
       "to": "R",
@@ -119,6 +129,16 @@
     },
     {
       "className": "java/lang/StringBuilder",
+      "method": "toString",
+      "desc": "()Ljava/lang/String;",
+      "state": 1,
+      "from": "O",
+      "to": "R",
+      "enter": 0,
+      "exit": 1
+    },
+    {
+      "className": "java/lang/StringBuffer",
       "method": "toString",
       "desc": "()Ljava/lang/String;",
       "state": 1,

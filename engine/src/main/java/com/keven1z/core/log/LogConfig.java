@@ -39,7 +39,6 @@ public class LogConfig {
     public static void ConfigFileAppender() throws Exception {
         initLog4jLogger();
         fileAppenderAddBurstFilter();
-        System.out.println("[SimpleIAST] Log4j initialized successfully");
     }
 
     /**
@@ -99,10 +98,10 @@ public class LogConfig {
                     File file = new File(log4jBaseDir);
                     if (!file.exists() && file.isDirectory()) {
                         if (!file.mkdirs()) {
-                            System.err.println("[SimpleIAST] Log dir:" + log4jBaseDir + " create failed");
+                            System.err.println("[SimpleIAST] Log Dir:" + log4jBaseDir + " create failed");
                         }
                     }
-                    System.out.println("[SimpleIAST] Log dir:" + log4jBaseDir);
+                    System.out.println("[SimpleIAST] Log Dir:" + log4jBaseDir);
 
                     String path = log4jBaseDir + type.getTargetPath();
                     BasicConfigurator.configure(createFileAppender(type.getAppender(), path));
@@ -216,10 +215,8 @@ public class LogConfig {
     public static void enableDebug() {
         if (LogTool.isDebugEnabled()) {
             LogLog.setInternalDebugging(true);
-            System.out.println("[SimpleIAST] Log4j debug mode enabled");
         } else {
             LogLog.setInternalDebugging(false);
-            System.out.println("[SimpleIAST] Log4j debug mode disabled");
         }
     }
 

@@ -19,6 +19,7 @@ public class HookClassVisitor extends ClassVisitor {
     private final String className;
     //监控进入hook点，但未成功匹配方法描述，弹出警告告知method或者desc错误
     private boolean isVisitMethod;
+    private final Logger hookLogger = Logger.getLogger("hook.info");
 
     public HookClassVisitor(ClassWriter classWriter, String className) {
         super(Opcodes.ASM9, classWriter);
@@ -38,7 +39,9 @@ public class HookClassVisitor extends ClassVisitor {
             return methodVisitor;
         }
         isVisitMethod = true;
-
+        if (LogTool.isDebugEnabled()) {
+            hookLogger.info("Hooked class:" + className + "." + name + descriptor);
+        }
         JSRInlinerAdapter jsrInlinerAdapter = new JSRInlinerAdapter(methodVisitor, access, name, descriptor, signature, exceptions);
         return new HookAdviceAdapter(Opcodes.ASM9, jsrInlinerAdapter, access, className, name, descriptor, policy);
     }

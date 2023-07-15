@@ -1,7 +1,6 @@
 package com.keven1z.core.utils;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+
 import com.keven1z.core.consts.CommonConst;
 import com.keven1z.core.consts.PolicyConst;
 import com.keven1z.core.graph.taint.TaintGraph;
@@ -13,13 +12,11 @@ import com.keven1z.core.policy.PolicyContainer;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PolicyUtils {
-    private static final Cache<String, Policy> policyCache = CacheBuilder.newBuilder().maximumSize(512).build();
+    private final static ConcurrentHashMap<String, Policy> policyCache = new ConcurrentHashMap<>(2048);
 
     /**
      * 判断是否是hook点或者是hook接口的实现类
@@ -31,7 +28,7 @@ public class PolicyUtils {
      * @return 是否是hook点或者是hook接口的实现类
      */
     public static boolean isHook(String className, PolicyContainer policyContainer, String[] interfaces, String superClass, ClassLoader loader) throws IOException {
-        if (PolicyUtils.isHookedByClassName(className, policyContainer)) {
+        if (PolicyUtils.isHookedByClassName(className, policyContainer, true)) {
             return true;
         }
         Set<String> ancestors = ClassUtils.buildAncestors(interfaces, superClass);
@@ -42,7 +39,7 @@ public class PolicyUtils {
     public static boolean isHook(PolicyContainer policyContainer, Class<?> clazz) {
         String className = clazz.getName();
         className = className.replace(".", "/");
-        if (PolicyUtils.isHookedByClassName(className, policyContainer)) {
+        if (PolicyUtils.isHookedByClassName(className, policyContainer, false)) {
             return true;
         }
         Set<String> allInterfaces = ClassUtils.getAllInterfaces(clazz);
@@ -55,29 +52,29 @@ public class PolicyUtils {
      * @param className 类名(.分割)
      * @return 是否在hook点中。
      */
-    private static boolean isHookedByClassName(String className, PolicyContainer policyContainer) {
+    private static boolean isHookedByClassName(String className, PolicyContainer policyContainer, boolean isSetHooked) {
         List<Policy> https = policyContainer.getHttp();
-        if (isHookedByClassName(className, https)) {
+        if (isHookedByClassName(className, https, isSetHooked)) {
             return true;
         }
         List<Policy> sources = policyContainer.getSource();
-        if (isHookedByClassName(className, sources)) {
+        if (isHookedByClassName(className, sources, isSetHooked)) {
             return true;
         }
         List<Policy> sanitizers = policyContainer.getSanitizers();
-        if (isHookedByClassName(className, sanitizers)) {
+        if (isHookedByClassName(className, sanitizers, isSetHooked)) {
             return true;
         }
         List<Policy> sinks = policyContainer.getSink();
-        if (isHookedByClassName(className, sinks)) {
+        if (isHookedByClassName(className, sinks, isSetHooked)) {
             return true;
         }
         List<Policy> propagations = policyContainer.getPropagation();
 
-        return isHookedByClassName(className, propagations);
+        return isHookedByClassName(className, propagations, isSetHooked);
     }
 
-    public static boolean isHookedByClassName(String className, List<Policy> policies) {
+    public static boolean isHookedByClassName(String className, List<Policy> policies, boolean isSetHooked) {
         for (Policy hookPolicy : policies) {
             //如果为接口hook类或者已经hook，不进行hook
             if (hookPolicy.getInter() || hookPolicy.isHooked()) {
@@ -85,7 +82,9 @@ public class PolicyUtils {
             }
             String name = hookPolicy.getClassName();
             if (name.equals(className) && hookPolicy.getState() == CommonConst.ON) {
-                hookPolicy.setHooked(true);
+                if (isSetHooked) {
+                    hookPolicy.setHooked(true);
+                }
                 return true;
             }
         }
@@ -104,6 +103,7 @@ public class PolicyUtils {
         }
         return false;
     }
+
     /**
      * 判断class的接口或者父类是否是hook点
      *
@@ -111,6 +111,9 @@ public class PolicyUtils {
      * @return 是否在hook点中。
      */
     public static boolean isHookedByAncestors(String className, Set<String> ancestors, PolicyContainer policyContainer) {
+        if (ancestors.isEmpty()) {
+            return false;
+        }
         List<Policy> interfacePolicy = policyContainer.getInterfacePolicy();
         Policy hookedByAncestors = isHookedByAncestors(className, ancestors, interfacePolicy);
         if (hookedByAncestors != null) {
@@ -150,13 +153,13 @@ public class PolicyUtils {
      */
     public static Policy getHookedPolicy(String className, String method, String desc, PolicyContainer policyContainer) {
         String sign = className + "." + method + desc;
-        Policy policyCacheIfPresent = policyCache.getIfPresent(sign);
+        //策略在初始化时，
+        Policy policyCacheIfPresent = policyCache.get(sign);
         if (policyCacheIfPresent != null) {
             return policyCacheIfPresent;
         }
 
         Policy hookedPolicy;
-
         List<Policy> https = policyContainer.getHttp();
         hookedPolicy = getHookedPolicy(className, method, desc, https);
         if (hookedPolicy != null) {
@@ -196,7 +199,7 @@ public class PolicyUtils {
 
     public static Policy getHookedPolicy(String className, String method, String desc, List<Policy> policies) {
         String sign = className + "." + method + desc;
-        Policy policyCacheIfPresent = policyCache.getIfPresent(sign);
+        Policy policyCacheIfPresent = policyCache.get(sign);
         if (policyCacheIfPresent != null) {
             return policyCacheIfPresent;
         }
@@ -213,19 +216,6 @@ public class PolicyUtils {
         return null;
     }
 
-//    public static Policy getHookedPolicy(String method, String desc, List<Policy> policies) {
-//        if (policies == null || policies.isEmpty()) {
-//            throw new RuntimeException("Policy is null");
-//        }
-//        for (Policy p : policies) {
-//            String m = p.getMethod();
-//            String d = p.getDesc();
-//            if (m.equals(method) && d.equals(desc)) {
-//                return p;
-//            }
-//        }
-//        return null;
-//    }
 
     /**
      * 获取对应from、to、conditions的对象
@@ -270,12 +260,13 @@ public class PolicyUtils {
      * 查找来源的节点,来源不仅仅是source阶段的节点
      */
     public static TaintNode searchFromNode(Object fromObject, TaintGraph taintGraph) {
-        Set<TaintNode> allNode = taintGraph.getAllNode();
-        ArrayList<TaintNode> taintNodes = new ArrayList<>(allNode);
-        Collections.reverse(taintNodes);//一般是在后面，所以需要倒序，fromObject提前计算
-
         int fromObjectHashCode = System.identityHashCode(fromObject);
-        for (TaintNode node : taintNodes) {
+        if (!taintGraph.isTaint(fromObjectHashCode)) {
+            return null;
+        }
+        Set<TaintNode> allNode = taintGraph.getAllNode();
+
+        for (TaintNode node : allNode) {
             /*
              * 是否为污点对象，eg: fromObject= "sql",传播方法为StringBuilder.toString,污点传出方向为返回值，返回值为sql，则判定为污点
              */

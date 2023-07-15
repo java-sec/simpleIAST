@@ -18,8 +18,10 @@ package com.keven1z.core.hook.http.request;
 
 
 
+import com.keven1z.core.Config;
 import com.keven1z.core.utils.ReflectionUtils;
 
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -314,6 +316,25 @@ public class CoyoteRequest extends AbstractRequest {
 //        String clientIp = "127.0.0.1";
         String realIp = getHeader("x-forwarded-for");
         return realIp != null ? realIp : "";
+    }
+
+    @Override
+    public byte[] getRequestMessage() {
+        Object request = null;
+        try {
+            request = ReflectionUtils.getField(this.request, "request");
+            Object inputBuffer = ReflectionUtils.getField(request, "inputBuffer");
+            Object bb = ReflectionUtils.getField(inputBuffer, "bb");
+
+            byte[] bytes = (byte[]) ReflectionUtils.invokeMethod(bb, "array", AbstractRequest.EMPTY_CLASS);
+            int limit = (Integer) ReflectionUtils.invokeMethod(bb, "limit", AbstractRequest.EMPTY_CLASS);
+            limit = Math.min(limit, Config.MAX_REQUEST_MESSAGE_LENGTH);
+            bytes = Arrays.copyOfRange(bytes, 0, limit);
+            return bytes;
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            return new byte[0];
+        }
+
     }
 
     /**

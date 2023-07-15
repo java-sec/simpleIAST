@@ -9,9 +9,7 @@ import com.keven1z.core.log.LogTool;
 import com.keven1z.core.policy.Policy;
 import com.keven1z.core.policy.PolicyTypeEnum;
 import com.keven1z.core.utils.PolicyUtils;
-
 import java.util.List;
-
 import static com.keven1z.core.hook.spy.HookThreadLocal.TAINT_GRAPH_THREAD_LOCAL;
 import static com.keven1z.core.hook.spy.HookThreadLocal.isSuspectedTaint;
 

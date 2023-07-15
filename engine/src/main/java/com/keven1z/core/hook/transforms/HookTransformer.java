@@ -1,12 +1,13 @@
 package com.keven1z.core.hook.transforms;
 
-import com.keven1z.core.hook.asm.HookClassVisitor;
+import com.keven1z.core.EngineController;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogTool;
 import com.keven1z.core.policy.PolicyContainer;
 import com.keven1z.core.utils.AsmUtils;
 import com.keven1z.core.utils.ClassUtils;
 import com.keven1z.core.utils.PolicyUtils;
+import com.keven1z.core.hook.asm.HookClassVisitor;
 import org.apache.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -52,7 +53,8 @@ public class HookTransformer implements ClassFileTransformer {
         if (null == className) {
             return classfileBuffer;
         }
-        if (className.startsWith("com/keven1z") || className.startsWith("org/objectweb")) {
+
+        if (className.startsWith("com/keven1z") || className.startsWith("org/objectweb") || EngineController.context.isInBlackList(className)) {
             return classfileBuffer;
         }
 
@@ -72,35 +74,28 @@ public class HookTransformer implements ClassFileTransformer {
     }
 
     private byte[] doTransform(ClassLoader loader, String className, Class<?> classBeingRedefined, byte[] classfileBuffer) throws IOException {
-        boolean isReTransform = false;
         if (classBeingRedefined != null) {
             String name = classBeingRedefined.getName().replace(".", "/");
             if (!name.equals(className)) {
                 return classfileBuffer;
-            } else {
-                isReTransform = true;
             }
         }
-        //尽量不调用classReader读取classfileBuffer，防止出现异常
-        ClassReader classReader = null;
         //判断该类为ReTransform类
-        if (!isReTransform) {
-            classReader = new ClassReader(classfileBuffer);
-            //不hook接口类
-            if (ClassUtils.isInterface(classReader.getAccess())) {
-                return classfileBuffer;
-            }
-            //判断是否在hook点策略中
-            if (!PolicyUtils.isHook(className, policy, classReader.getInterfaces(), classReader.getSuperName(), loader)) {
-                return classfileBuffer;
-            }
+        ClassReader classReader = new ClassReader(classfileBuffer);
+        //不hook接口类
+        if (ClassUtils.isInterface(classReader.getAccess())) {
+            return classfileBuffer;
         }
+        //判断是否在hook点策略中
+        if (!PolicyUtils.isHook(className, policy, classReader.getInterfaces(), classReader.getSuperName(), loader)) {
+            return classfileBuffer;
+        }
+
         //transform class +1
         transformCount++;
 
-        if (classReader == null) {
-            classReader = new ClassReader(classfileBuffer);
-        }
+        classReader = new ClassReader(classfileBuffer);
+
 
         ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
             /*
@@ -121,6 +116,7 @@ public class HookTransformer implements ClassFileTransformer {
         //通过自定义classVisitor进行类的改造
         HookClassVisitor taintClassVisitor = new HookClassVisitor(classWriter, className);
         classReader.accept(taintClassVisitor, ClassReader.EXPAND_FRAMES);
+
         return dumpClassIfNecessary(className, classWriter.toByteArray());
     }
 
@@ -179,14 +175,11 @@ public class HookTransformer implements ClassFileTransformer {
             if (instrumentation.isModifiableClass(clazz) && !clazz.getName().startsWith("java.lang.invoke.LambdaForm")) {
                 try {
                     if (PolicyUtils.isHook(this.policy, clazz)) {
-
                         // hook已经加载的类，或者是回滚已经加载的类
                         instrumentation.retransformClasses(clazz);
                     }
                 } catch (Throwable t) {
-                    System.out.println(t);
-                    t.printStackTrace();
-//                        LogTool.error("failed to retransform class " + clazz.getName() + ": " + t.getMessage(), t);
+                    LogTool.error(ErrorType.TRANSFORM_ERROR, "Failed to reTransform class " + clazz.getName() + ": " + t.getMessage(), t);
                 }
 
             }

@@ -2,13 +2,12 @@ package com.keven1z.core.hook.spy;
 
 import com.keven1z.core.graph.taint.TaintGraph;
 import com.keven1z.core.graph.taint.TaintNode;
-import com.keven1z.core.hook.http.request.AbstractRequest;
 import com.keven1z.core.hook.resolvers.HandlerHookClassResolverInitializer;
+import com.keven1z.core.hook.http.request.AbstractRequest;
 import com.keven1z.core.log.LogTool;
 import com.keven1z.core.model.ApplicationModel;
 import com.keven1z.core.vulnerability.report.ReportMessage;
 import org.apache.log4j.Logger;
-
 import java.util.List;
 
 import static com.keven1z.core.hook.spy.HookSpy.clear;

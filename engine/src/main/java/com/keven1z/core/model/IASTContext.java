@@ -5,6 +5,7 @@ import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.policy.PolicyContainer;
 
 import java.lang.instrument.Instrumentation;
+import java.util.List;
 
 
 public class IASTContext {
@@ -25,6 +26,7 @@ public class IASTContext {
     private PolicyContainer policyContainer;
 
     private Instrumentation instrumentation;
+    private List<String> blackList;
     /**
      * 启动模式
      */
@@ -71,5 +73,24 @@ public class IASTContext {
             this.policyContainer.clear();
         }
         HookSpy.clear();
+    }
+
+    public void setBlackList(List<String> blackList) {
+        this.blackList = blackList;
+    }
+
+    /**
+     * 判定hook点是否在黑名单中
+     */
+    public boolean isInBlackList(String className) {
+        if (blackList == null || className == null) {
+            return false;
+        }
+        for (String blackStr : blackList) {
+            if (className.startsWith(blackStr) || className.endsWith(blackStr)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -293,9 +293,10 @@ public class ClassStructureImplByAsm extends FamilyClassStructure {
         return internalClassName + ".class";
     }
 
-    private final static Map<Pair, ClassStructure> classStructureCache
-            = new HashMap<>();
-
+//    private final static Cache<Pair, ClassStructure> classStructureCache
+//            = CacheBuilder.newBuilder().maximumSize(1024).build();
+    private final static HashMap<Pair, ClassStructure> classStructureCache
+            = new HashMap<>(1024);
     // 构造一个类结构实例
     private ClassStructure newInstance(final String javaClassName) {
 

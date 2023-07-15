@@ -1,7 +1,7 @@
 package com.keven1z.core.policy;
 
+import com.keven1z.core.log.LogTool;
 import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.List;
 

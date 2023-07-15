@@ -21,13 +21,17 @@ public class Config {
     }
 
     /**
-     * 策略文件名称
+     * 策略文件路径
      */
     public final static String POLICY_FILE_PATH = "policy.json";
     /**
+     * hook黑名单路径
+     */
+    public final static String BLACK_LIST_FILE_PATH = "blacklist.txt";
+    /**
      * 服务端地址
      */
-   public static final String IAST_SERVER = "http://127.0.0.1:8989";
+    public static final String IAST_SERVER = "http://127.0.0.1:8989";
     /**
      * 监控线程最大工作数量
      */

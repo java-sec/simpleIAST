@@ -1,8 +1,8 @@
 package com.keven1z.core.hook.resolvers;
 
+import com.keven1z.core.hook.server.detectors.ServerEnum;
 import com.keven1z.core.hook.http.handlers.HttpRequestHandler;
 import com.keven1z.core.hook.http.handlers.TomcatHttpHandler;
-import com.keven1z.core.hook.server.detectors.ServerEnum;
 import com.keven1z.core.hook.spy.HookSpy;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogTool;

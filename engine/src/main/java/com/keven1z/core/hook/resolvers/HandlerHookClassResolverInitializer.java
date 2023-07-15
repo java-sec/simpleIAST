@@ -22,7 +22,6 @@ public class HandlerHookClassResolverInitializer {
      * 分发处理类map
      */
     private final Map<PolicyTypeEnum, HandlerHookClassResolver> resolverMap = new ConcurrentHashMap<>();
-
     private HandlerHookClassResolverInitializer() {
         bind();
     }
@@ -48,12 +47,11 @@ public class HandlerHookClassResolverInitializer {
     }
 
     public void resolve(Object returnValue, Object thisObject, Object[] parameters, String className, String method, String desc, String type, String policyName, boolean isEnter) {
-        TaintGraph taintGraph = TAINT_GRAPH_THREAD_LOCAL.get();
         /*
          * 如果污点图为空，并且不为http或污染源节点，则不处理
          */
-        if (taintGraph != null) {
-            if (taintGraph.isEmpty() && !(PolicyTypeEnum.HTTP.name().equals(type) || PolicyTypeEnum.SOURCE.name().equals(type))) {
+        if (TAINT_GRAPH_THREAD_LOCAL.get() != null) {
+            if (TAINT_GRAPH_THREAD_LOCAL.get().isEmpty() && !(PolicyTypeEnum.HTTP.name().equals(type) || PolicyTypeEnum.SOURCE.name().equals(type))) {
                 return;
             }
         }

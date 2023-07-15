@@ -1,16 +1,17 @@
 package com.keven1z.core.hook.spy;
 
+import java.lang.spy.SimpleIASTSpy;
+
 import com.keven1z.core.EngineController;
 import com.keven1z.core.log.ErrorType;
 import com.keven1z.core.log.LogTool;
 import com.keven1z.core.model.ApplicationModel;
-import com.keven1z.core.policy.PolicyContainer;
 import com.keven1z.core.policy.PolicyTypeEnum;
+import com.keven1z.core.policy.PolicyContainer;
 import org.apache.log4j.Logger;
 
-import java.lang.spy.SimpleIASTSpy;
-
 import static com.keven1z.core.Config.MAX_REPORT_QUEUE_SIZE;
+
 import static com.keven1z.core.hook.spy.HookThreadLocal.*;
 
 public class HookSpy implements SimpleIASTSpy {
