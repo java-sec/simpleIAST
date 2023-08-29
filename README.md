@@ -1,3 +1,7 @@
+# 此仓库仅用于源码阅读学习，建议先看下原仓库作者写的[二次开发](./二次开发.md)文档，内有对项目结构的介绍。
+
+
+
 <div align="center">
 
 #  simpleIAST  ![1.0 (shields.io)](https://img.shields.io/badge/1.0-brightgreen.svg)
